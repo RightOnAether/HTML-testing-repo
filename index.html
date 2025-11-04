@@ -7,758 +7,191 @@
 <style>
   :root{
     --bg:#0f1724;
-    --panel:#0b1220cc;
     --accent:#7dd3fc;
     --muted:#9aa7b2;
     --card:#0b1228;
   }
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;}
   body{
     background:linear-gradient(180deg,#071228 0%, #061b2b 60%);
     display:flex;align-items:center;justify-content:center;
-    color: #e6f3fb;
+    color:#e6f3fb;
   }
-  .wrap{
-    width:960px;max-width:96vw;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);
+  .wrap{width:960px;max-width:96vw;background:rgba(255,255,255,0.02);
     border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.7);
-    border:1px solid rgba(255,255,255,0.03);
   }
-  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   h1{font-size:20px;margin:0}
-  .ui-row{display:flex;gap:12px;align-items:center}
-  .card{
-    background:var(--card);padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);
-  }
-  #gameCanvas{
-    display:block;background:linear-gradient(180deg,#082033,#021019); width:100%; height:640px;
-    border-radius:12px;border:6px solid rgba(255,255,255,0.02);
-    box-sizing:border-box;
-    image-rendering:pixelated;
-  }
-  .center{
-    display:flex;justify-content:center;align-items:center;
-  }
-  .overlay{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    pointer-events:none;
-  }
-  .panel{
-    pointer-events:auto;
-    width:520px;max-width:92vw;padding:18px;border-radius:14px;background:linear-gradient(180deg,rgba(0,0,0,0.5),rgba(6,10,18,0.6));
-    border:1px solid rgba(255,255,255,0.04);
-    box-shadow:0 8px 30px rgba(2,6,23,0.6);
-    text-align:center;
-  }
-  button.big{
-    margin-top:12px;padding:10px 18px;border-radius:10px;border:none;background:var(--accent);color:#06202b;font-weight:700;
-    cursor:pointer;font-size:15px;
-  }
-  .muted{color:var(--muted);font-size:13px}
-  .hud{display:flex;gap:8px;align-items:center}
-  .stat{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px}
-  .items-list{display:flex;gap:6px;flex-wrap:wrap;max-width:85%}
-  .item-pill{padding:6px 8px;border-radius:999px;background:rgba(125,211,252,0.08);border:1px solid rgba(125,211,252,0.06);font-size:12px}
-  .small{font-size:12px}
-  footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
-  @media (max-width:600px){ #gameCanvas{height:56vw;} .panel{width:88vw} }
+  .card{background:var(--card);padding:10px;border-radius:12px;}
+  #gameCanvas{display:block;background:#081e2b;width:100%;height:640px;
+    border-radius:12px;border:6px solid rgba(255,255,255,0.02);box-sizing:border-box;}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .panel{width:520px;max-width:92vw;padding:18px;border-radius:14px;
+    background:rgba(0,0,0,0.6);text-align:center;}
+  button.big{margin-top:12px;padding:10px 18px;border-radius:10px;border:none;
+    background:var(--accent);color:#06202b;font-weight:700;cursor:pointer;font-size:15px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div>
-      <h1>Emoji Isaac — Mini</h1>
-      <div class="muted small">Move: WASD. Shoot: Arrow keys. Pick items by touching them.</div>
+  <h1>Emoji Isaac — Mini</h1>
+  <canvas id="gameCanvas" width="880" height="640"></canvas>
+
+  <div id="overlay" class="overlay">
+    <div id="titleScreen" class="panel">
+      <h2>Emoji Isaac</h2>
+      <p>Move: WASD &nbsp; Shoot: Arrow Keys</p>
+      <button id="startBtn" class="big">Start</button>
     </div>
-    <div style="flex:1"></div>
-    <div class="hud card">
-      <div class="stat" id="hpStat">HP: 3</div>
-      <div class="stat" id="dmgStat">DMG: 1</div>
-      <div class="stat" id="spdStat">SPD: 2</div>
-      <div class="stat" id="rngStat">RNG: 200</div>
-    </div>
-  </header>
-
-  <div style="position:relative;">
-    <canvas id="gameCanvas" width="880" height="640"></canvas>
-
-    <!-- Title / overlays -->
-    <div id="overlay" class="overlay" style="display:flex;">
-      <div id="titleScreen" class="panel">
-        <h2 style="margin:6px 0;font-size:24px">Emoji Isaac</h2>
-        <p class="muted">A small roguelike room. Pick items. Survive waves.</p>
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-          <button id="startBtn" class="big">Start Run</button>
-          <button id="demoBtn" class="big" style="background:#a78bfa;color:#081226">Demo</button>
-        </div>
-        <p class="muted small" style="margin-top:8px">10 items in each category. Random rooms. Smooth movement.</p>
-      </div>
-
-      <div id="gameOverScreen" class="panel" style="display:none;">
-        <h2 id="goTitle">Game Over</h2>
-        <p id="goMsg" class="muted">You died. Try again.</p>
-        <button id="restartBtn" class="big">Restart</button>
-        <div class="muted small" style="margin-top:8px">Score: <span id="scoreVal">0</span></div>
-      </div>
+    <div id="gameOverScreen" class="panel" style="display:none;">
+      <h2>Game Over</h2>
+      <p id="goMsg"></p>
+      <button id="restartBtn" class="big">Restart</button>
     </div>
   </div>
-
-  <footer>
-    <div class="muted">Made with ❤️ — 1 HTML file.</div>
-    <div class="items-list card" id="pickedList"></div>
-  </footer>
 </div>
 
 <script>
-/*
-  Emoji Isaac — Mini
-  Single HTML file. Small Binding of Isaac-like game.
-  Controls:
-    Move: WASD
-    Shoot: Arrow keys (hold to shoot)
-*/
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
+let state="title";
+let player,enemies=[],bullets=[],keys={},shootDirs={},wave=1,score=0;
 
-const W = canvas.width, H = canvas.height;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const choice=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 
-let overlay = document.getElementById('overlay');
-let titleScreen = document.getElementById('titleScreen');
-let gameOverScreen = document.getElementById('gameOverScreen');
-let startBtn = document.getElementById('startBtn');
-let demoBtn = document.getElementById('demoBtn');
-let restartBtn = document.getElementById('restartBtn');
-let pickedList = document.getElementById('pickedList');
-
-let hpStat = document.getElementById('hpStat');
-let dmgStat = document.getElementById('dmgStat');
-let spdStat = document.getElementById('spdStat');
-let rngStat = document.getElementById('rngStat');
-let scoreVal = document.getElementById('scoreVal');
-
-const rand = (a,b)=> a + Math.random()*(b-a);
-const choice = arr => arr[Math.floor(Math.random()*arr.length)];
-const clamp = (v,a,b)=> Math.max(a,Math.min(b,v));
-
-/* --------------------
-   Game data & items
-   -------------------- */
-const PLAYER_EMOJI = "🙂";
-const ENEMY_POOL = ["😈","👿","🦹","😡","👺","🧟","💀","☠️","😾","😵"];
-const PICKUP_EMOJI = "✨";
-
-const ITEMS = {
-  Range: [
-    {name:"Tiny Lens",desc:"+20 range",apply:(p)=>p.range+=20},
-    {name:"Focus Eye",desc:"+40 range",apply:(p)=>p.range+=40},
-    {name:"Long Tear",desc:"+60 range",apply:(p)=>p.range+=60},
-    {name:"Scoped Emoji",desc:"+80 range",apply:(p)=>p.range+=80},
-    {name:"Sniper Smile",desc:"+120 range",apply:(p)=>p.range+=120},
-    {name:"Far Gaze",desc:"+160 range",apply:(p)=>p.range+=160},
-    {name:"Orbit Eye",desc:"+200 range",apply:(p)=>p.range+=200},
-    {name:"Wide Lens",desc:"+250 range",apply:(p)=>p.range+=250},
-    {name:"Eagle Emoji",desc:"+300 range",apply:(p)=>p.range+=300},
-    {name:"Wanderer",desc:"+400 range",apply:(p)=>p.range+=400},
-  ],
-  Speed: [
-    {name:"Sneakers",desc:"+0.2 spd",apply:(p)=>p.speed+=0.2},
-    {name:"Swift Sock",desc:"+0.35 spd",apply:(p)=>p.speed+=0.35},
-    {name:"Light Step",desc:"+0.5 spd",apply:(p)=>p.speed+=0.5},
-    {name:"Feathered Hat",desc:"+0.75 spd",apply:(p)=>p.speed+=0.75},
-    {name:"Boots",desc:"+1.0 spd",apply:(p)=>p.speed+=1.0},
-    {name:"Rocket Shoe",desc:"+1.5 spd",apply:(p)=>p.speed+=1.5},
-    {name:"Wind Cloak",desc:"+2 spd",apply:(p)=>p.speed+=2},
-    {name:"Blink",desc:"+dash style",apply:(p)=>p.speed+=1.2},
-    {name:"Haste Token",desc:"+3 spd",apply:(p)=>p.speed+=3},
-    {name:"Mercury",desc:"+4 spd",apply:(p)=>p.speed+=4},
-  ],
-  Damage: [
-    {name:"Bandage",desc:"+0.25 dmg",apply:(p)=>p.dmg+=0.25},
-    {name:"Sharp Smile",desc:"+0.5 dmg",apply:(p)=>p.dmg+=0.5},
-    {name:"Knuckle",desc:"+1 dmg",apply:(p)=>p.dmg+=1},
-    {name:"Spiky Lash",desc:"+1.5 dmg",apply:(p)=>p.dmg+=1.5},
-    {name:"Rage Core",desc:"+2 dmg",apply:(p)=>p.dmg+=2},
-    {name:"Heart Spike",desc:"+3 dmg",apply:(p)=>p.dmg+=3},
-    {name:"Brutal Grin",desc:"+4 dmg",apply:(p)=>p.dmg+=4},
-    {name:"Titan Punch",desc:"+6 dmg",apply:(p)=>p.dmg+=6},
-    {name:"Wrath",desc:"+8 dmg",apply:(p)=>p.dmg+=8},
-    {name:"God Fist",desc:"+12 dmg",apply:(p)=>p.dmg+=12},
-  ],
-  "Bullet Modifiers": [
-    {name:"Pierce",desc:"Bullets pierce 1",apply:(b)=>b.pierce+=1},
-    {name:"Spread",desc:"Shoots 3 shots",apply:(p)=>p.spread=(p.spread||1)+2},
-    {name:"Speedy",desc:"Bullets speed +2",apply:(b)=>b.speed+=2},
-    {name:"Homing",desc:"Weak homing",apply:(b)=>b.homing=true},
-    {name:"Bouncy",desc:"Bullets bounce 1",apply:(b)=>b.bounce+=1},
-    {name:"Slow",desc:"Slows enemies on hit",apply:(b)=>b.slow=true},
-    {name:"Poison",desc:"Damage over time",apply:(b)=>b.poison=true},
-    {name:"Explode",desc:"Explodes on death",apply:(b)=>b.explode=true},
-    {name:"Split",desc:"Splits on hit",apply:(b)=>b.split=true},
-    {name:"Big Shot",desc:"Bigger bullets",apply:(b)=>b.size*=1.6},
-  ]
-};
-
-function makeItemCategoryList(){
-  return Object.keys(ITEMS);
-}
-const itemCategories = makeItemCategoryList();
-
-/* --------------------
-   Game state
-   -------------------- */
-let state = "title"; // title, playing, gameover
-let player = null;
-let bullets = [];
-let enemies = [];
-let pickups = [];
-let keys = {};
-let shootDirs = {left:false,right:false,up:false,down:false};
-let lastTime = 0;
-let spawnTimer = 0;
-let wave = 1;
-let score = 0;
-let pickedItems = [];
-
-/* --------------------
-   Entities
-   -------------------- */
 function newPlayer(){
-  return {
-    x: W/2, y: H/2,
-    r: 20,
-    vx:0, vy:0,
-    speed: 2, // base
-    dmg: 1,
-    range: 200,
-    hp: 3,
-    fireRate: 180, // ms
-    lastShot:0,
-    spread:1,
-    bulletsModifiers: {pierce:0,bounce:0,homing:false,slow:false,poison:false,explode:false,split:false,size:8,speed:6},
-    emoji: PLAYER_EMOJI
-  };
-}
-function spawnEnemy(x,y,level=1){
-  const e = {
-    x, y, vx:0, vy:0,
-    r:16 + Math.min(12, level*2),
-    speed: 0.6 + 0.2*level + Math.random()*0.3,
-    hp: 1 + Math.floor(level*0.7),
-    emoji: choice(ENEMY_POOL),
-    colorShift: Math.random()*360,
-    knocked:0
-  };
-  enemies.push(e);
-  return e;
-}
-function spawnPickup(x,y){
-  // choose random category and random item from that category
-  const cat = choice(itemCategories);
-  const item = choice(ITEMS[cat]);
-  pickups.push({x,y,r:14,cat,item,emoji:PICKUP_EMOJI});
+  return{x:W/2,y:H/2,r:20,vx:0,vy:0,speed:2,dmg:1,range:200,hp:3,
+    fireRate:180,lastShot:0,emoji:"🙂",bulletsModifiers:{pierce:0,bounce:0,size:8,speed:6}};
 }
 
-/* --------------------
-   Input
-   -------------------- */
+const ENEMY_POOL=["😈","👿","🦹","😡","👺","🧟","💀","☠️","😾","😵"];
+
+function spawnEnemy(x,y,level=1){
+  enemies.push({x,y,vx:0,vy:0,r:16+level*2,speed:0.6+0.2*level,hp:1+level,emoji:choice(ENEMY_POOL)});
+}
+
+function spawnWave(n){
+  enemies=[];
+  for(let i=0;i<5+n;i++)spawnEnemy(rand(40,W-40),rand(40,H-40),n);
+}
+
+function startRun(){
+  player=newPlayer();bullets=[];wave=1;score=0;
+  spawnWave(wave);
+  document.getElementById('titleScreen').style.display="none";
+  document.getElementById('gameOverScreen').style.display="none";
+  state="playing";
+}
+
+function handleDeath(){
+  state="gameover";
+  document.getElementById('overlay').style.display="flex";
+  document.getElementById('gameOverScreen').style.display="block";
+  document.getElementById('goMsg').textContent=`You reached wave ${wave}`;
+}
+
 window.addEventListener('keydown',e=>{
-  keys[e.key.toLowerCase()] = true;
-  if(e.key === "ArrowLeft") shootDirs.left = true;
-  if(e.key === "ArrowRight") shootDirs.right = true;
-  if(e.key === "ArrowUp") shootDirs.up = true;
-  if(e.key === "ArrowDown") shootDirs.down = true;
-  // prevent arrow scroll
-  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()]=true;
+  if(e.key.startsWith("Arrow")){shootDirs[e.key]=true;e.preventDefault();}
 });
 window.addEventListener('keyup',e=>{
-  keys[e.key.toLowerCase()] = false;
-  if(e.key === "ArrowLeft") shootDirs.left = false;
-  if(e.key === "ArrowRight") shootDirs.right = false;
-  if(e.key === "ArrowUp") shootDirs.up = false;
-  if(e.key === "ArrowDown") shootDirs.down = false;
+  keys[e.key.toLowerCase()]=false;
+  if(e.key.startsWith("Arrow"))shootDirs[e.key]=false;
 });
 
-/* --------------------
-   Game control
-   -------------------- */
-startBtn.addEventListener('click',()=>startRun(false));
-demoBtn.addEventListener('click',()=>startRun(true));
-restartBtn.addEventListener('click',()=>startRun(false));
+document.getElementById('startBtn').onclick=startRun;
+document.getElementById('restartBtn').onclick=startRun;
 
-function startRun(demo=false){
-  // reset
-  player = newPlayer();
-  bullets = [];
-  enemies = [];
-  pickups = [];
-  pickedItems = [];
-  wave = 1;
-  score = 0;
-  spawnWave(wave);
-  state = "playing";
-  titleScreen.style.display = "none";
-  gameOverScreen.style.display = "none";
-  overlay.style.pointerEvents = "none";
-  updateHUD();
-}
-
-/* --------------------
-   Spawning / waves
-   -------------------- */
-function spawnWave(n){
-  enemies = [];
-  const count = Math.min(12, 3 + n*2);
-  for(let i=0;i<count;i++){
-    let x = Math.random() < 0.5 ? rand(-50, -10) : rand(W+10, W+50);
-    let y = rand(10, H-10);
-    if(Math.random()>0.6){ x = rand(10,W-10); y = Math.random()<0.5? rand(-50,-10):rand(H+10,H+50);}
-    spawnEnemy(x,y,n);
-  }
-  // spawn some pickups
-  for(let i=0;i<3;i++){
-    spawnPickup(rand(80,W-80), rand(80,H-80));
-  }
-}
-
-/* --------------------
-   Shooting
-   -------------------- */
-function tryShoot(now){
-  const pd = player;
-  if(!pd) return;
-  const dirVecs = [];
-  if(shootDirs.left) dirVecs.push({x:-1,y:0});
-  if(shootDirs.right) dirVecs.push({x:1,y:0});
-  if(shootDirs.up) dirVecs.push({x:0,y:-1});
-  if(shootDirs.down) dirVecs.push({x:0,y:1});
-  if(dirVecs.length===0) return;
-  // rate limit
-  if(now - pd.lastShot < pd.fireRate) return;
-  pd.lastShot = now;
-  // handle spread
-  let shots = pd.spread || 1;
-  for(let s=0;s<shots;s++){
-    dirVecs.forEach(d=>{
-      let angle = Math.atan2(d.y,d.x);
-      // small random for spread
-      angle += (s - (shots-1)/2) * 0.15;
-      createBullet(pd.x, pd.y, Math.cos(angle), Math.sin(angle), pd);
-    });
-  }
-}
-
-function createBullet(x,y,dx,dy,owner){
-  const bm = JSON.parse(JSON.stringify(owner.bulletsModifiers));
-  const b = {
-    x, y,
-    dx, dy,
-    speed: bm.speed || 6,
-    vx: dx*(bm.speed||6),
-    vy: dy*(bm.speed||6),
-    r: bm.size || 8,
-    life: owner.range || 200,
-    pierce: bm.pierce || 0,
-    bounce: bm.bounce || 0,
-    homing: bm.homing || false,
-    slow: bm.slow || false,
-    poison: bm.poison || false,
-    explode: bm.explode || false,
-    split: bm.split || false,
-    owner: owner
-  };
+function createBullet(x,y,dx,dy){
+  const b={x,y,vx:dx*player.bulletsModifiers.speed,vy:dy*player.bulletsModifiers.speed,
+           r:player.bulletsModifiers.size,life:player.range};
   bullets.push(b);
 }
 
-/* --------------------
-   Physics & update
-   -------------------- */
+function tryShoot(now){
+  const dirs=[];
+  if(shootDirs["ArrowLeft"])dirs.push({x:-1,y:0});
+  if(shootDirs["ArrowRight"])dirs.push({x:1,y:0});
+  if(shootDirs["ArrowUp"])dirs.push({x:0,y:-1});
+  if(shootDirs["ArrowDown"])dirs.push({x:0,y:1});
+  if(!dirs.length)return;
+  if(now-player.lastShot<player.fireRate)return;
+  player.lastShot=now;
+  dirs.forEach(d=>createBullet(player.x,player.y,d.x,d.y));
+}
 
-function update(dt, now){
-  if(state !== "playing") return;
-  // player movement
-  const p = player;
-  let mx = 0, my = 0;
-  if(keys['w']) my -= 1;
-  if(keys['s']) my += 1;
-  if(keys['a']) mx -= 1;
-  if(keys['d']) mx += 1;
-  const mag = Math.hypot(mx,my) || 1;
-  p.vx += (mx/mag * p.speed - p.vx) * 0.18;
-  p.vy += (my/mag * p.speed - p.vy) * 0.18;
-  p.x += p.vx;
-  p.y += p.vy;
-  p.x = clamp(p.x, p.r, W-p.r);
-  p.y = clamp(p.y, p.r, H-p.r);
-
+function update(dt,now){
+  if(state!=="playing")return;
+  let mx=0,my=0;
+  if(keys['w'])my-=1;if(keys['s'])my+=1;if(keys['a'])mx-=1;if(keys['d'])mx+=1;
+  const mag=Math.hypot(mx,my)||1;
+  player.vx+=(mx/mag*player.speed-player.vx)*0.2;
+  player.vy+=(my/mag*player.speed-player.vy)*0.2;
+  player.x+=player.vx;player.y+=player.vy;
+  player.x=clamp(player.x,player.r,W-player.r);
+  player.y=clamp(player.y,player.r,H-player.r);
   tryShoot(now);
 
-  // bullets
-  for(let i=bullets.length-1;i>=0;i--){
-    const b = bullets[i];
-    // homing
-    if(b.homing && enemies.length){
-      let target = enemies.reduce((best,e)=>{
-        const d = (e.x-b.x)**2 + (e.y-b.y)**2;
-        if(!best || d < best.d) return {e,d};
-        return best;
-      }, null);
-      if(target){
-        const tx = target.e.x - b.x, ty = target.e.y - b.y;
-        const na = Math.atan2(ty,tx);
-        const cur = Math.atan2(b.vy, b.vx);
-        const nv = cur + (na-cur)*0.08;
-        const sp = Math.hypot(b.vx,b.vy)||b.speed;
-        b.vx = Math.cos(nv)*sp;
-        b.vy = Math.sin(nv)*sp;
-      }
-    }
+  bullets.forEach(b=>{
+    b.x+=b.vx;b.y+=b.vy;b.life-=Math.hypot(b.vx,b.vy);
+  });
+  bullets=bullets.filter(b=>b.life>0);
 
-    b.x += b.vx;
-    b.y += b.vy;
-    b.life -= Math.hypot(b.vx,b.vy);
-    // bounce
-    if(b.bounce > 0){
-      let bounced=false;
-      if(b.x < b.r || b.x > W-b.r){ b.vx *= -1; bounced=true; }
-      if(b.y < b.r || b.y > H-b.r){ b.vy *= -1; bounced=true; }
-      if(bounced) b.bounce--;
-    }
-    // remove
-    if(b.life < 0 || b.x < -50 || b.x > W+50 || b.y < -50 || b.y > H+50){
-      if(b.explode) doExplosion(b.x,b.y, b.owner.dmg*2);
-      bullets.splice(i,1);
-    }
+  for(let e of enemies){
+    const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy)||1;
+    e.vx+=(dx/d*e.speed-e.vx)*0.04;
+    e.vy+=(dy/d*e.speed-e.vy)*0.04;
+    e.x+=e.vx;e.y+=e.vy;
+    if(dist(e,player)<e.r+player.r){player.hp-=1;e.hp=0;if(player.hp<=0)handleDeath();}
   }
 
-  // enemies
-  for(let i=enemies.length-1;i>=0;i--){
-    const e = enemies[i];
-    // simple seek
-    const dx = player.x - e.x, dy = player.y - e.y;
-    const d = Math.hypot(dx,dy) || 1;
-    e.vx += (dx/d*e.speed - e.vx) * 0.04;
-    e.vy += (dy/d*e.speed - e.vy) * 0.04;
-    e.x += e.vx;
-    e.y += e.vy;
-    if(e.knocked>0) e.knocked = Math.max(0, e.knocked - dt);
+  // remove dead enemies from poison or collisions
+  enemies=enemies.filter(e=>e.hp>0);
 
-    // enemy-player collision
-    if(dist(e, player) < e.r + player.r){
-      // damage player
-      player.hp -= 1;
-      e.hp -= 999; // suicide
-      // small knockback
-      const k = 10;
-      const nx = (e.x - player.x)/d;
-      e.x += nx*k;
-      if(player.hp <= 0) handleDeath();
-    }
-  }
-
-  // bullet-enemy collisions
+  // bullet collisions
   for(let bi=bullets.length-1;bi>=0;bi--){
-    const b = bullets[bi];
+    const b=bullets[bi];
     for(let ei=enemies.length-1;ei>=0;ei--){
-      const e = enemies[ei];
-      if(dist(b,e) < b.r + e.r){
-        // hit
-        e.hp -= player.dmg;
-        if(b.slow) e.speed = Math.max(0.2, e.speed * 0.7);
-        if(b.poison) { e.hp -= 0.3; }
-        if(b.split){
-          // spawn small bullets
-          for(let s=0;s<2;s++){
-            const ang = Math.atan2(b.vy,b.vx) + (s?0.5:-0.5);
-            createBullet(b.x, b.y, Math.cos(ang), Math.sin(ang), player);
-          }
-        }
-        if(b.pierce > 0){
-          b.pierce--;
-        } else {
-          if(b.explode) doExplosion(b.x,b.y, player.dmg*1.5);
-          bullets.splice(bi,1);
-          break;
-        }
-        if(e.hp <= 0){
-          // enemy dies
-          const ex = e.x, ey = e.y;
-          enemies.splice(ei,1);
-          score += 10;
-          // small chance for pickup
-          if(Math.random() < 0.35) spawnPickup(ex + rand(-20,20), ey + rand(-20,20));
-        }
+      const e=enemies[ei];
+      if(dist(b,e)<b.r+e.r){
+        e.hp-=player.dmg;
+        bullets.splice(bi,1);
+        if(e.hp<=0){enemies.splice(ei,1);score+=10;}
+        break;
       }
     }
   }
 
-  // pickups
-  for(let i=pickups.length-1;i>=0;i--){
-    const pk = pickups[i];
-    // float motion
-    pk.y += Math.sin(perfNow()/300 + i)*0.2;
-    if(dist(pk, player) < pk.r + player.r){
-      // apply
-      applyItem(pk.cat, pk.item);
-      pickedItems.push(`${pk.item.name}`);
-      pickups.splice(i,1);
-      updatePickedList();
-    }
-  }
-
-  // wave end
-  if(enemies.length === 0){
-    wave++;
-    spawnWave(wave);
-    // small heal
-    player.hp = Math.min(player.hp + 1, 5);
-  }
-
-  updateHUD();
-}
-
-function dist(a,b){ return Math.hypot((a.x||a[0]) - (b.x||b[0]), (a.y||a[1]) - (b.y||b[1])); }
-function perfNow(){ return performance.now(); }
-
-function handleDeath(){
-  state = "gameover";
-  overlay.style.pointerEvents = "auto";
-  gameOverScreen.style.display = "block";
-  titleScreen.style.display = "none";
-  document.getElementById('goMsg').textContent = `You died on wave ${wave}.`;
-  document.getElementById('scoreVal').textContent = String(score);
-}
-
-/* --------------------
-   Items apply
-   -------------------- */
-function applyItem(category,item){
-  if(category === "Bullet Modifiers"){
-    // apply to player bullet modifiers
-    item.apply(player.bulletsModifiers);
-  } else {
-    item.apply(player);
-  }
-  // pick effect: small visual pulse handled in render
-  updateHUD();
-}
-
-/* --------------------
-   Utilities
-   -------------------- */
-function updateHUD(){
-  hpStat.textContent = `HP: ${Math.max(0, Math.round(player.hp*10)/10)}`;
-  dmgStat.textContent = `DMG: ${Math.round(player.dmg*10)/10}`;
-  spdStat.textContent = `SPD: ${Math.round(player.speed*10)/10}`;
-  rngStat.textContent = `RNG: ${Math.round(player.range)}`;
-}
-
-function updatePickedList(){
-  pickedList.innerHTML = "";
-  for(let i=0;i<pickedItems.length;i++){
-    const d = document.createElement('div');
-    d.className = 'item-pill';
-    d.textContent = pickedItems[i];
-    pickedList.appendChild(d);
-  }
-}
-
-/* --------------------
-   Explosion
-   -------------------- */
-function doExplosion(x,y,power){
-  // damage nearby enemies
-  for(let i=enemies.length-1;i>=0;i--){
-    const e = enemies[i];
-    const d = Math.hypot(e.x-x,e.y-y);
-    if(d < 60){
-      e.hp -= power;
-      e.x += (e.x-x)/Math.max(1,d) * 20;
-      e.y += (e.y-y)/Math.max(1,d) * 20;
-      if(e.hp<=0){ enemies.splice(i,1); score+=10;}
-    }
-  }
-  // visual handled in render
-}
-
-/* --------------------
-   Rendering
-   -------------------- */
-function render(now){
-  // clear
-  ctx.clearRect(0,0,W,H);
-
-  // background grid
-  drawBackground();
-
-  // pickups
-  for(const pk of pickups){
-    drawCircleEmoji(pk.x, pk.y, pk.r, pk.emoji, '#fff');
-  }
-
-  // bullets
-  for(const b of bullets){
-    drawBullet(b);
-  }
-
-  // enemies
-  for(const e of enemies){
-    drawEmoji(e.x, e.y, e.r, e.emoji);
-    // HP bar
-    const w = 30;
-    const hpPct = clamp((e.hp) / (1 + Math.floor(wave*0.7)), 0, 1);
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    roundRect(ctx, e.x - w/2, e.y - e.r - 10, w, 5, 2, true, false);
-    ctx.fillStyle = `rgba(255,50,50,${0.9})`;
-    ctx.fillRect(e.x - w/2, e.y - e.r - 10, w*hpPct, 5);
-  }
-
-  // player
-  if(player){
-    drawEmoji(player.x, player.y, player.r, player.emoji);
-  }
-
-  // HUD top-left
-  ctx.fillStyle = 'rgba(255,255,255,0.02)';
-  roundRect(ctx, 12, 80, 220, 84, 10, true, false);
-  ctx.fillStyle = '#fff';
-  ctx.font = '12px system-ui,Arial';
-  ctx.fillText(`Wave: ${wave}`, 22, 100);
-  ctx.fillText(`Enemies: ${enemies.length}`, 22, 120);
-  ctx.fillText(`Score: ${score}`, 22, 140);
-
-  // small bottom-right picked items preview
-  ctx.fillStyle = 'rgba(255,255,255,0.02)';
-  roundRect(ctx, W-220, H-110, 200, 96, 10, true, false);
-  ctx.fillStyle = '#fff';
-  ctx.font = '12px system-ui,Arial';
-  ctx.fillText('Picked Items:', W-210, H-92);
-  for(let i=0;i<Math.min(6,pickedItems.length);i++){
-    ctx.fillText('- ' + pickedItems[i], W-210, H-76 + i*14);
-  }
-
-  // if title screen visible, dim canvas
-  if(state !== "playing"){
-    ctx.fillStyle = 'rgba(2,6,12,0.5)';
-    ctx.fillRect(0,0,W,H);
-  }
-}
-
-function drawBackground(){
-  // subtle vignette
-  const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0, '#04202b');
-  g.addColorStop(1, '#021017');
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,W,H);
-
-  // soft grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for(let x=0;x<W;x+=40){
-    ctx.moveTo(x,0);ctx.lineTo(x,H);
-  }
-  for(let y=0;y<H;y+=40){
-    ctx.moveTo(0,y);ctx.lineTo(W,y);
-  }
-  ctx.stroke();
+  if(!enemies.length){wave++;spawnWave(wave);player.hp=Math.min(player.hp+1,5);}
 }
 
 function drawEmoji(x,y,r,emoji){
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fillStyle = 'rgba(255,255,255,0.02)';
-  ctx.fill();
-  ctx.font = `${Math.round(r*1.6)}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(emoji, x, y+1);
-  ctx.restore();
-}
-function drawCircleEmoji(x,y,r,emoji,color){
-  ctx.save();
-  roundRect(ctx, x-r, y-r, r*2, r*2, r, true, false);
-  ctx.font = `${Math.round(r*1.2)}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#fff';
-  ctx.fillText(emoji, x, y);
-  ctx.restore();
-}
-function drawBullet(b){
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(b.x, b.y, b.r,0,Math.PI*2);
-  ctx.fillStyle = 'rgba(125,211,252,0.95)';
-  ctx.fill();
-  ctx.fillStyle = '#00121a';
-  ctx.font = `${Math.max(8,Math.round(b.r))}px serif`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('•', b.x, b.y+1);
-  ctx.restore();
+  ctx.font=`${r*1.6}px serif`;
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(emoji,x,y);
 }
 
-function roundRect(ctx, x, y, w, h, r, fill, stroke) {
-  if (typeof stroke == 'undefined') stroke = true;
-  if (typeof r === 'undefined') r = 5;
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-  if (fill) ctx.fill();
-  if (stroke) ctx.stroke();
+function render(){
+  ctx.fillStyle="#081e2b";ctx.fillRect(0,0,W,H);
+  enemies.forEach(e=>drawEmoji(e.x,e.y,e.r,e.emoji));
+  bullets.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle="#7dd3fc";ctx.fill();});
+  drawEmoji(player.x,player.y,player.r,player.emoji);
+  ctx.fillStyle="#fff";ctx.font="14px sans-serif";
+  ctx.fillText(`HP:${player.hp} Wave:${wave} Score:${score}`,20,20);
 }
 
-/* --------------------
-   Main loop
-   -------------------- */
+let last=0;
 function loop(ts){
-  if(!lastTime) lastTime = ts;
-  const dt = ts - lastTime;
-  lastTime = ts;
-
-  update(dt, ts);
-  render(ts);
-
+  if(!last)last=ts;
+  const dt=ts-last;last=ts;
+  update(dt,ts);render();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
-
-/* --------------------
-   Init title interaction
-   -------------------- */
-overlay.style.pointerEvents = "auto";
-titleScreen.style.display = "block";
-gameOverScreen.style.display = "none";
-
-/* --------------------
-   Small helper for demo: spawn some pickups and items
-   -------------------- */
-function seedDemo(){
-  // give a few items
-  const cats = itemCategories;
-  for(let c of cats){
-    const it = choice(ITEMS[c]);
-    applyItem(c, it);
-    pickedItems.push(it.name);
-  }
-  updatePickedList();
-}
-demoBtn.addEventListener('click',seedDemo);
-
-/* --------------------
-   small helper to show initial items when game starts
-   -------------------- */
-startBtn.addEventListener('click', ()=>{
-  // show overlay off after tiny delay handled in startRun
-});
 </script>
 </body>
 </html>
